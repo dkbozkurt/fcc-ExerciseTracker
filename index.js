@@ -74,6 +74,34 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 		.catch(err => console.log(err));
 })
 
+app.get('/api/users/:_id/logs', (req, res) => {
+	let userId = req.params._id;
+
+	let responseObj = {};
+
+	userModel.findById(userId)
+		.then(userFound => {
+			if (!userFound) {
+				res.status(404).json({ error: 'User not found' });
+			}
+
+			let username = userFound.username;
+			let userId = userFound._id;
+
+			responseObj = {
+				_id: userId,
+				username: username
+			}
+
+			exerciseModel.find({ userId: userId }).then((exercises) => {
+				responseObj.log = exercises;
+				responseObj.count = exercises.length;
+				res.json(responseObj);
+			}).catch(err => console.log(err));
+		})
+		.catch(err => console.log(err));
+});
+
 const listener = app.listen(process.env.PORT || 3000, () => {
 	console.log('Your app is listening on port ' + listener.address().port)
 })
