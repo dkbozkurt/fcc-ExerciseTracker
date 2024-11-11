@@ -79,6 +79,24 @@ app.get('/api/users/:_id/logs', (req, res) => {
 
 	let responseObj = {};
 
+	let limitParam = req.query.limit;
+	let toParam = req.query.to;
+	let fromParam = req.query.from;
+
+	limitParam = limitParam ? parseInt(limitParam) : limitParam;
+
+	let queryObj = { userId: userId }
+
+	if (fromParam || toParam) {
+		queryObj.date = {};
+		if (fromParam) {
+			queryObj.date['$gte'] = fromParam;
+		}
+		if (toParam) {
+			queryObj.date['$lte'] = toParam;
+		}
+	}
+
 	userModel.findById(userId)
 		.then(userFound => {
 			if (!userFound) {
@@ -93,11 +111,21 @@ app.get('/api/users/:_id/logs', (req, res) => {
 				username: username
 			}
 
-			exerciseModel.find({ userId: userId }).then((exercises) => {
-				responseObj.log = exercises;
-				responseObj.count = exercises.length;
-				res.json(responseObj);
-			}).catch(err => console.log(err));
+			exerciseModel.find(queryObj).limit(limitParam)
+				.then((exercises) => {
+
+					exercises = exercises.map(exercise => {
+						return {
+							description: exercise.description,
+							duration: exercise.duration,
+							date: exercise.date.toDateString()
+						}
+					});
+
+					responseObj.log = exercises;
+					responseObj.count = exercises.length;
+					res.json(responseObj);
+				}).catch(err => console.log(err));
 		})
 		.catch(err => console.log(err));
 });
